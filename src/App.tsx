@@ -108,7 +108,7 @@ function App() {
             </p>
             <p className="text-byggnads-gray-600 text-sm leading-relaxed">
               <strong>Övertid (OV):</strong> (1) alla timmar på dagar utanför standardarbetsveckan, (2) block som överstiger dagsnorm, eller (3) block efter veckonorm. 
-              Automatisk obetald rast efter 5 timmar. <strong>Sjukdag:</strong> Dag 1 = 0 kr / 8h norm, Dag 2-14 = 80% lön / 8h norm, Dag 15+ = 0 kr / 0h.
+              Automatisk obetald rast efter 5 timmar. <strong>Sjukperiod:</strong> Sjukdagar som ligger inom 4 dagar från varandra räknas som en sammanhängande sjukperiod (inkl. helger). Dag 1 = 0 kr / 8h norm, Dag 2-14 = 80% lön / 8h norm, Dag 15+ = 0 kr / 0h.
             </p>
           </div>
         </div>

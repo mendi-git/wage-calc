@@ -17,19 +17,30 @@ function buildSickIndexMap(weeks: Week[]): Record<string, number> {
   
   const map: Record<string, number> = {};
   let counter = 0;
-  let prev: string | null = null;
+  let prevDate: Date | null = null;
   
   for (const d of allSickDays) {
-    if (prev) {
-      const pd = new Date(prev);
-      pd.setDate(pd.getDate() + 1);
-      const isConsecutive = toLocalDateKey(pd) === d.date;
-      counter = isConsecutive ? counter + 1 : 1;
+    if (prevDate) {
+      const currentDate = new Date(d.date);
+      // Calculate days between previous sick day and current sick day
+      const daysBetween = Math.floor((currentDate.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000));
+      
+      // If days are within 4 days apart (covers weekends), treat as consecutive
+      // This handles cases where someone is sick Thu-Tue with weekend in between
+      const isConsecutive = daysBetween <= 4;
+      
+      if (isConsecutive) {
+        // Add all the days in between (including non-work days)
+        counter += daysBetween;
+      } else {
+        // New sick period starts
+        counter = 1;
+      }
     } else {
       counter = 1;
     }
     map[d.date] = counter;
-    prev = d.date;
+    prevDate = new Date(d.date);
   }
   
   return map;
