@@ -1,6 +1,8 @@
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
 
-export type WeeklyNorm = 40 | 48 | 50;
+export type DayOfWeekNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7; // Monday=1, Sunday=7
+
+export type WeeklyNorm = number;
 
 export interface WorkDay {
   date: string; // ISO date string (YYYY-MM-DD)

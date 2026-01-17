@@ -23,10 +23,23 @@ export function ovType(b: TimeBlock): OVType {
   return 'OVA';
 }
 
+function isOutsideWorkWeek(dayOfWeek: number, workWeekStart: number, workWeekEnd: number): boolean {
+  // Handle wrap-around weeks (e.g., Thursday to Monday = 4 to 1)
+  if (workWeekStart <= workWeekEnd) {
+    // Normal week (e.g., Monday=1 to Friday=5)
+    return dayOfWeek < workWeekStart || dayOfWeek > workWeekEnd;
+  } else {
+    // Wrap-around week (e.g., Saturday=6 to Tuesday=2)
+    return dayOfWeek < workWeekStart && dayOfWeek > workWeekEnd;
+  }
+}
+
 export function classifyBlocks(
   normalBlocks: TimeBlock[],
   sickEntries: SickEntry[],
-  weekNorm: WeeklyNorm
+  weekNorm: WeeklyNorm,
+  workWeekStart: number = 1,
+  workWeekEnd: number = 5
 ): ClassifiedBlock[] {
   normalBlocks.sort((a, b) => a.start.getTime() - b.start.getTime());
   
@@ -94,19 +107,32 @@ export function classifyBlocks(
     }
     const dayNormMin = dailyNormMinCache[dK];
     
+    // Check if this day is outside the standard work week
+    const dayOfWeek = b.start.getDay() || 7; // Convert Sunday=0 to 7
+    const isOutsideStandardWeek = isOutsideWorkWeek(dayOfWeek, workWeekStart, workWeekEnd);
+    
     const isDailyExcess = dayNormMin > 0 && dayMins[dK] >= dayNormMin;
     const isAfterBoundary = !!afterBoundary.get(b);
     
-    const eligibleForOV = isDailyExcess || isAfterBoundary;
     let isOV = false;
     let bonus: OBType | OVType | null = null;
     
-    if (eligibleForOV && ovBlocksNeeded > 0) {
+    // Days outside standard work week are ALWAYS overtime
+    if (isOutsideStandardWeek) {
       isOV = true;
       bonus = ovType(b);
-      ovBlocksNeeded--;
+      if (ovBlocksNeeded > 0) ovBlocksNeeded--; // Still consume from the pool
     } else {
-      bonus = obType(b);
+      // For days inside the work week, use normal logic
+      const eligibleForOV = isDailyExcess || isAfterBoundary;
+      
+      if (eligibleForOV && ovBlocksNeeded > 0) {
+        isOV = true;
+        bonus = ovType(b);
+        ovBlocksNeeded--;
+      } else {
+        bonus = obType(b);
+      }
     }
     
     classified.push({ block: b, isOV, bonus });

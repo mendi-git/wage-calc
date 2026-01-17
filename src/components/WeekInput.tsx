@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Week, WorkDay, WeeklyNorm, DayOfWeek } from '../types';
+import { Week, WorkDay, WeeklyNorm, DayOfWeek, DayOfWeekNumber } from '../types';
 import { getISOWeek, getDateFromWeekAndDay } from '../utils/timeUtils';
 import { DayRow } from './DayRow';
 
@@ -9,6 +9,8 @@ interface WeekInputProps {
   onUpdateWeek: (week: Week) => void;
   onDeleteWeek: (weekId: string) => void;
   onCopyWeek: (week: Week) => void;
+  workWeekStart: DayOfWeekNumber;
+  workWeekEnd: DayOfWeekNumber;
 }
 
 const DAY_ORDER: DayOfWeek[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -19,6 +21,8 @@ export const WeekInput: React.FC<WeekInputProps> = ({
   onUpdateWeek,
   onDeleteWeek,
   onCopyWeek,
+  workWeekStart,
+  workWeekEnd,
 }) => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedWeek, setSelectedWeek] = useState(getISOWeek(new Date()).week);
@@ -35,17 +39,28 @@ export const WeekInput: React.FC<WeekInputProps> = ({
       return;
     }
     
-    // Create all 7 days (Mon-Sun), but only pre-fill Mon-Fri with times
+    // Helper function to check if a day is within the work week
+    const isInWorkWeek = (dayNum: number): boolean => {
+      if (workWeekStart <= workWeekEnd) {
+        // Normal week (e.g., Monday=1 to Friday=5)
+        return dayNum >= workWeekStart && dayNum <= workWeekEnd;
+      } else {
+        // Wrap-around week (e.g., Saturday=6 to Tuesday=2)
+        return dayNum >= workWeekStart || dayNum <= workWeekEnd;
+      }
+    };
+    
+    // Create all 7 days (Mon-Sun), pre-fill days within work week
     const days: WorkDay[] = DAY_ORDER.map((dayOfWeek, index) => {
       const dayNum = index + 1; // Monday = 1, Sunday = 7
       const date = getDateFromWeekAndDay(selectedYear, selectedWeek, dayNum);
-      const isWeekday = index < 5; // Monday-Friday
+      const isWorkDay = isInWorkWeek(dayNum);
       
       return {
         date,
         dayOfWeek,
-        startTime: isWeekday ? defaultStartTime : undefined,
-        endTime: isWeekday ? defaultEndTime : undefined,
+        startTime: isWorkDay ? defaultStartTime : undefined,
+        endTime: isWorkDay ? defaultEndTime : undefined,
         isSick: false,
       };
     });
@@ -118,15 +133,16 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                 <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
                   Veckonorm (timmar)
                 </label>
-                <select
+                <input
+                  type="number"
                   value={weeklyNorm}
-                  onChange={(e) => setWeeklyNorm(parseInt(e.target.value) as WeeklyNorm)}
-                  className="input-field"
-                >
-                  <option value={40}>40h</option>
-                  <option value={48}>48h</option>
-                  <option value={50}>50h</option>
-                </select>
+                  onChange={(e) => setWeeklyNorm(parseFloat(e.target.value) || 40)}
+                  className="input-field w-24"
+                  min="0"
+                  max="168"
+                  step="0.5"
+                  placeholder="40"
+                />
               </div>
             </div>
             
@@ -167,7 +183,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                 </button>
               </div>
               <p className="text-xs text-byggnads-gray-500 mt-3">
-                Dessa tider tillämpas på måndag till fredag när veckan läggs till. Lördag och söndag lämnas tomma men kan redigeras efter behov.
+                Dessa tider tillämpas på dagar inom din standardarbetsvecka när veckan läggs till. Övriga dagar lämnas tomma men kan redigeras efter behov.
               </p>
             </div>
           </div>

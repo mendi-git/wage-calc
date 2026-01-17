@@ -35,7 +35,12 @@ function buildSickIndexMap(weeks: Week[]): Record<string, number> {
   return map;
 }
 
-export function calculateWages(weeks: Week[], hourlyWage: number): CalculationResult {
+export function calculateWages(
+  weeks: Week[], 
+  hourlyWage: number, 
+  workWeekStart: number = 1, 
+  workWeekEnd: number = 5
+): CalculationResult {
   const sickIndexByDate = buildSickIndexMap(weeks);
   const weekBreakdowns: WeekBreakdown[] = [];
   
@@ -61,7 +66,7 @@ export function calculateWages(weeks: Week[], hourlyWage: number): CalculationRe
   };
   
   for (const week of weeks) {
-    const weekBreakdown = calculateWeek(week, hourlyWage, sickIndexByDate);
+    const weekBreakdown = calculateWeek(week, hourlyWage, sickIndexByDate, workWeekStart, workWeekEnd);
     weekBreakdowns.push(weekBreakdown);
     
     // Add to grand total
@@ -91,7 +96,9 @@ export function calculateWages(weeks: Week[], hourlyWage: number): CalculationRe
 function calculateWeek(
   week: Week,
   hourlyWage: number,
-  sickIndexByDate: Record<string, number>
+  sickIndexByDate: Record<string, number>,
+  workWeekStart: number,
+  workWeekEnd: number
 ): WeekBreakdown {
   // Separate normal work days and sick days
   const normalDays = week.days.filter(d => !d.isSick && d.startTime && d.endTime);
@@ -113,7 +120,7 @@ function calculateWeek(
   });
   
   // Classify blocks
-  const classified = classifyBlocks(normalBlocks, sickEntries, week.weeklyNorm);
+  const classified = classifyBlocks(normalBlocks, sickEntries, week.weeklyNorm, workWeekStart, workWeekEnd);
   
   // Build daily aggregation
   const dailyMap: Record<string, {
