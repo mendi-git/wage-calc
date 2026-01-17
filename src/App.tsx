@@ -103,9 +103,12 @@ function App() {
         <div className="card mb-8 border-l-4 border-byggnads-orange-500">
           <div className="p-6">
             <h2 className="text-lg font-semibold text-byggnads-dark mb-2">Så fungerar beräkningen</h2>
+            <p className="text-byggnads-gray-600 text-sm leading-relaxed mb-2">
+              <strong>Dagsnorm:</strong> Veckonormen fördelas jämnt över arbetsdagarna. Ex: 28h veckonorm över mån-tors = 7h/dag.
+            </p>
             <p className="text-byggnads-gray-600 text-sm leading-relaxed">
-              Övertid (OV) tilldelas: (1) alla timmar på dagar utanför din standardarbetsvecka, (2) block som överstiger dagsnorm, eller (3) block efter veckonorm. 
-              Automatisk obetald rast efter 5 timmar. Sjukdag: Dag 1 = 0 kr / 8h norm, Dag 2-14 = 80% lön / 8h norm, Dag 15+ = 0 kr / 0h.
+              <strong>Övertid (OV):</strong> (1) alla timmar på dagar utanför standardarbetsveckan, (2) block som överstiger dagsnorm, eller (3) block efter veckonorm. 
+              Automatisk obetald rast efter 5 timmar. <strong>Sjukdag:</strong> Dag 1 = 0 kr / 8h norm, Dag 2-14 = 80% lön / 8h norm, Dag 15+ = 0 kr / 0h.
             </p>
           </div>
         </div>
@@ -170,7 +173,7 @@ function App() {
                 </label>
               </div>
               <p className="text-xs text-byggnads-gray-500 mt-2">
-                Dagar utanför standardarbetsveckan räknas som övertid (OV). Vanligtvis måndag-fredag.
+                Dagar utanför standardarbetsveckan räknas som övertid (OV). Dagsnormen beräknas genom att fördela veckonormen jämnt över arbetsdagarna.
               </p>
             </div>
           </div>

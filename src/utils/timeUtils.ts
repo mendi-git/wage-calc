@@ -50,22 +50,42 @@ export function getDayOfWeek(date: Date): DayOfWeek {
   return DAY_NAMES[date.getDay()];
 }
 
-export function getDailyNorm(weekNorm: WeeklyNorm, date: Date): number {
-  const day = date.getDay(); // 0=Sun..6=Sat
-  
-  if (weekNorm === 40) {
-    return (day >= 1 && day <= 5) ? 8 : 0;
+function countWorkDays(workWeekStart: number, workWeekEnd: number): number {
+  if (workWeekStart <= workWeekEnd) {
+    // Normal week (e.g., Monday=1 to Friday=5)
+    return workWeekEnd - workWeekStart + 1;
+  } else {
+    // Wrap-around week (e.g., Saturday=6 to Tuesday=2)
+    return (7 - workWeekStart + 1) + workWeekEnd;
   }
-  if (weekNorm === 48) {
-    if (day >= 1 && day <= 4) return 10;
-    if (day === 5) return 8;
+}
+
+function isInWorkWeek(dayOfWeek: number, workWeekStart: number, workWeekEnd: number): boolean {
+  if (workWeekStart <= workWeekEnd) {
+    // Normal week (e.g., Monday=1 to Friday=5)
+    return dayOfWeek >= workWeekStart && dayOfWeek <= workWeekEnd;
+  } else {
+    // Wrap-around week (e.g., Saturday=6 to Tuesday=2)
+    return dayOfWeek >= workWeekStart || dayOfWeek <= workWeekEnd;
+  }
+}
+
+export function getDailyNorm(
+  weekNorm: WeeklyNorm, 
+  date: Date, 
+  workWeekStart: number = 1, 
+  workWeekEnd: number = 5
+): number {
+  const day = date.getDay() || 7; // Convert Sunday=0 to 7
+  
+  // Check if this day is within the work week
+  if (!isInWorkWeek(day, workWeekStart, workWeekEnd)) {
     return 0;
   }
-  if (weekNorm === 50) {
-    return (day >= 1 && day <= 5) ? 10 : 0;
-  }
   
-  return (day >= 1 && day <= 5) ? 8 : 0;
+  // Calculate daily norm by dividing weekly norm by number of work days
+  const workDays = countWorkDays(workWeekStart, workWeekEnd);
+  return weekNorm / workDays;
 }
 
 export function getISOWeek(d: Date): { year: number; week: number } {

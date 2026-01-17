@@ -75,6 +75,14 @@ export const WeekInput: React.FC<WeekInputProps> = ({
     
     onAddWeek(newWeek);
     setEditingWeekId(newWeek.id);
+    
+    // Scroll to the new week
+    setTimeout(() => {
+      const element = document.getElementById(`week-${newWeek.id}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
   
   const handleDayChange = (weekId: string, dayIndex: number, updatedDay: WorkDay) => {
@@ -197,6 +205,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
           {weeks.sort((a, b) => a.year === b.year ? a.weekNumber - b.weekNumber : a.year - b.year).map((week) => (
             <div
               key={week.id}
+              id={`week-${week.id}`}
               className="card"
             >
               <div className="bg-byggnads-gray-50 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-byggnads-gray-200">

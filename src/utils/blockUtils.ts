@@ -102,7 +102,7 @@ export function classifyBlocks(
     if (!(dK in dayMins)) dayMins[dK] = 0;
     
     if (!(dK in dailyNormMinCache)) {
-      const dn = getDailyNorm(weekNorm, b.start);
+      const dn = getDailyNorm(weekNorm, b.start, workWeekStart, workWeekEnd);
       dailyNormMinCache[dK] = dn * 60;
     }
     const dayNormMin = dailyNormMinCache[dK];
