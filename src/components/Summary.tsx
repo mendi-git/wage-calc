@@ -57,7 +57,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
               <tbody>
                 {/* Base Hours Row */}
                 <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                  <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">Bas</td>
+                  <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                    <div>Bas</div>
+                    <div className="text-xs font-normal text-byggnads-gray-500">Ordinarie tid</div>
+                  </td>
                   {week.days.map((day) => (
                     <td key={day.date} className="px-2 py-2 text-center">
                       <div className="font-semibold text-byggnads-dark">{fmt(day.baseHours)} h</div>
@@ -73,7 +76,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OB1 Row - only show if there are OB1 hours */}
                 {week.OB1Hours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OB1 (20%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OB1 (20%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">05:00–06:00 vardagar</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OB1Hours > 0 && (
@@ -94,7 +100,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OB2 Row */}
                 {week.OB2Hours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OB2 (40%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OB2 (40%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">18:00–22:00 vardagar</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OB2Hours > 0 && (
@@ -115,7 +124,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OB3 Row */}
                 {week.OB3Hours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OB3 (70%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OB3 (70%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">22:00–05:00, helger</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OB3Hours > 0 && (
@@ -136,7 +148,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OVA Row */}
                 {week.OVAHours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVA (30%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OVA (30%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">06:00–17:00 vardagar</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OVAHours > 0 && (
@@ -157,7 +172,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OVB Row */}
                 {week.OVBHours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVB (50%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OVB (50%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">05:00, 17:00–19:00 vardagar</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OVBHours > 0 && (
@@ -178,7 +196,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OVC Row */}
                 {week.OVCHours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVC (70%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OVC (70%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">19:00–22:00 vardagar</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OVCHours > 0 && (
@@ -199,7 +220,10 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
                 {/* OVD Row */}
                 {week.OVDHours > 0 && (
                   <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVD (100%)</td>
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">
+                      <div>OVD (100%)</div>
+                      <div className="text-xs font-normal text-byggnads-gray-500">22:00–05:00, helger</div>
+                    </td>
                     {week.days.map((day) => (
                       <td key={day.date} className="px-2 py-2 text-center">
                         {day.OVDHours > 0 && (
@@ -219,7 +243,9 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
 
                 {/* Total Row */}
                 <tr className="border-t-2 border-byggnads-orange-500 bg-byggnads-orange-50">
-                  <td className="px-3 py-2 font-bold text-byggnads-dark sticky left-0 bg-byggnads-orange-50 z-10">Total</td>
+                  <td className="px-3 py-2 font-bold text-byggnads-dark sticky left-0 bg-byggnads-orange-50 z-10">
+                    <div>Total</div>
+                  </td>
                   {week.days.map((day) => (
                     <td key={day.date} className="px-2 py-2 text-center">
                       <div className="font-bold text-byggnads-orange-600 text-sm">{fmt(day.totalPay)}</div>
