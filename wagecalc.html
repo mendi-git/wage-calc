@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wage Calculator – Hybrid Prototype 1.7</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; padding: 20px; background: #fff; color: #000; font-family: system-ui, sans-serif; }
+    h1, h2, h3 { margin: 0 0 12px; }
+    .card { background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid #d1d5db; margin-bottom: 16px; }
+    input, select, button {
+      background: #fff; border: 1px solid #d1d5db; color: #000;
+      padding: 8px 10px; border-radius: 6px; font-size: 14px;
+    }
+    button { cursor: pointer; margin: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    th, td { border: 1px solid #d1d5db; padding: 6px; text-align: center; vertical-align: top; }
+    th { background: #f3f4f6; }
+    .stat { font-variant-numeric: tabular-nums; }
+    .stat small { display: block; font-size: 11px; color: #6b7280; }
+    .totals { margin-top: 12px; font-size: 14px; }
+    .totals p { margin: 4px 0; font-variant-numeric: tabular-nums; }
+    .grand { margin-top: 12px; padding: 10px; background: #e0f2fe; border: 1px solid #38bdf8; border-radius: 8px; font-weight: bold; color: #075985; text-align: center; }
+    .note { color:#6b7280; font-size:12px; }
+    .row { display:inline-flex; gap:8px; flex-wrap:wrap; align-items:center; margin:6px 0; }
+  </style>
+</head>
+<body>
+  <h1>Wage Calculator – Hybrid Prototype 1.7</h1>
+  <p class="note">Hybrid OT + OB. Overtime (OT) is assigned to the earliest blocks that are (1) daily excess over the day norm or (2) occur after the weekly norm is exceeded (incl. sick days’ 8h where applicable). Break after 5h. Sick: Day 1 = 0 SEK / counts as 8h for norm, Days 2–14 = 8h × 80%, Day 15+ = 0 SEK / 0h. Percentages shown in headers; summaries show only relevant categories. Date jumps to next day; times are kept.</p>
+
+  <div class="card">
+    <h2>1) Log work session</h2>
+    <div class="row">
+      <label>Hourly wage (SEK): <input type="number" id="hourlyWage" step="0.01" placeholder="e.g. 160"></label>
+      <label>Weekly norm:
+        <select id="weeklyNorm">
+          <option value="40">40 h</option>
+          <option value="48">48 h</option>
+          <option value="50">50 h</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label>Date: <input type="date" id="workDate"></label>
+      <label>Start: <input type="time" id="startTime"></label>
+      <label>End: <input type="time" id="endTime"></label>
+      <button id="btnSick">Sick</button>
+    </div>
+    <div class="row">
+      <button id="btnAdd">Add session</button>
+      <button id="btnReset">Clear all</button>
+    </div>
+
+    <h3>Sessions</h3>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Day</th><th>Type</th><th>Start</th><th>End</th><th>Worked hours</th><th>Action</th></tr>
+      </thead>
+      <tbody id="sessionsBody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>2) Select date range</h2>
+    <div class="row">
+      <label>From: <input type="date" id="rangeFrom"></label>
+      <label>To: <input type="date" id="rangeTo"></label>
+      <button id="btnCalc">Calculate pay</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3) Summary</h2>
+    <div id="summaryOutput"></div>
+  </div>
+
+<script>
+/* ===== Helpers & State ===== */
+const BLOCK_HOURS = 0.5;
+const BLOCK_MIN = 30;
+const dayNames = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+let sessions = [];
+let nextId = 1;
+
+const $ = (id) => document.getElementById(id);
+const fmt2 = (n) => Number(n||0).toFixed(2);
+
+function toLocalDateKey(d){ return d.toISOString().split("T")[0]; }
+function hhmm(d){ return d.toTimeString().slice(0,5); }
+function parseTime(dateStr,timeStr){
+  const [h,m]=timeStr.split(':').map(Number);
+  const d=new Date(dateStr+"T00:00:00");
+  d.setHours(h,m,0,0);
+  return d;
+}
+function buildBlocks(dateStr,startStr,endStr){
+  let start=parseTime(dateStr,startStr);
+  let end=parseTime(dateStr,endStr);
+  if(end<=start) end=new Date(end.getTime()+24*3600*1000);
+  const blocks=[];
+  let t=new Date(start);
+  while(t<end){
+    const bEnd=new Date(t.getTime()+BLOCK_MIN*60000);
+    blocks.push({start:new Date(t), end:bEnd});
+    t=bEnd;
+  }
+  return blocks;
+}
+function applyUnpaidBreak(blocks){
+  // Unpaid break always in the 6th hour => remove blocks 10 & 11 (0-index)
+  if(blocks.length>10) return blocks.filter((_,i)=>!(i===10||i===11));
+  return blocks;
+}
+
+/* ===== Session Management ===== */
+function addSession(){
+  const dateStr=$('workDate').value;
+  const startStr=$('startTime').value;
+  const endStr=$('endTime').value;
+  if(!dateStr||!startStr||!endStr){ alert("Fill in date, start and end."); return; }
+
+  let blocks=buildBlocks(dateStr,startStr,endStr);
+  blocks=applyUnpaidBreak(blocks);
+  if(blocks.length===0){ alert("No payable hours."); return; }
+
+  const workedHours=blocks.length*BLOCK_HOURS;
+  sessions.push({id:nextId++, type:"normal", dateStr, startStr, endStr, blocks, workedHours});
+  renderSessions();
+
+  // Autofill next day + keep times
+  let nextDate=new Date(dateStr);
+  nextDate.setDate(nextDate.getDate()+1);
+  $('workDate').value = nextDate.toISOString().split("T")[0];
+  $('startTime').value = startStr;
+  $('endTime').value   = endStr;
+}
+
+function addSickDay(){
+  const dateStr=$('workDate').value;
+  if(!dateStr){ alert("Select a date."); return; }
+  sessions.push({id:nextId++, type:"sick", dateStr});
+  renderSessions();
+
+  // Autofill next day (times stay as they are)
+  let nextDate=new Date(dateStr);
+  nextDate.setDate(nextDate.getDate()+1);
+  $('workDate').value = nextDate.toISOString().split("T")[0];
+}
+
+function renderSessions(){
+  const tb=$('sessionsBody'); tb.innerHTML="";
+  const sorted=[...sessions].sort((a,b)=>new Date(a.dateStr)-new Date(b.dateStr) || a.id-b.id);
+  for(const s of sorted){
+    const d=new Date(s.dateStr);
+    const hours = s.type==="sick" ? "-" : fmt2(s.workedHours);
+    tb.innerHTML += `<tr>
+      <td>${s.dateStr}</td><td>${dayNames[d.getDay()]}</td>
+      <td>${s.type==="sick"?"Sick":"Normal"}</td>
+      <td>${s.startStr||"-"}</td><td>${s.endStr||"-"}</td>
+      <td>${hours}</td>
+      <td><button onclick="deleteSession(${s.id})">Remove</button></td>
+    </tr>`;
+  }
+}
+function deleteSession(id){
+  sessions=sessions.filter(s=>s.id!==id);
+  renderSessions();
+  $('summaryOutput').innerHTML="";
+}
+function resetWeek(){
+  sessions=[];
+  renderSessions();
+  $('summaryOutput').innerHTML="";
+}
+
+/* ===== OB/OT Logic ===== */
+function isWeekend(d){const x=d.getDay();return x===0||x===6;}
+function obType(b){
+  const h=b.start.getHours();
+  if(isWeekend(b.start)||h>=22||h<5) return 'OB3';
+  if(h>=18&&h<22) return 'OB2';
+  if(h>=5&&h<6)  return 'OB1';
+  return null;
+}
+function ovType(b){
+  const h=b.start.getHours();
+  if(isWeekend(b.start)||h>=22||h<5) return 'OVD';
+  if(h===5||(h>=17&&h<19)) return 'OVB';
+  if(h>=19&&h<22) return 'OVC';
+  if(h>=6&&h<17)  return 'OVA';
+  return 'OVA';
+}
+const OB_RATE={OB1:0.20, OB2:0.40, OB3:0.70};
+const OV_RATE={OVA:0.30, OVB:0.50, OVC:0.70, OVD:1.00};
+const LABELS={
+  OB1:"OB1 (20%)",OB2:"OB2 (40%)",OB3:"OB3 (70%)",
+  OVA:"OVA (30%)",OVB:"OVB (50%)",OVC:"OVC (70%)",OVD:"OVD (100%)"
+};
+
+/* Day norm per weekly norm */
+function getDailyNorm(weekNorm,date){
+  const day=date.getDay(); // 0=Sun..6=Sat
+  if(weekNorm==40){ return (day>=1 && day<=5) ? 8 : 0; }
+  if(weekNorm==48){ if(day>=1 && day<=4) return 10; if(day==5) return 8; return 0; }
+  if(weekNorm==50){ return (day>=1 && day<=5) ? 10 : 0; }
+  return (day>=1 && day<=5) ? 8 : 0;
+}
+
+/* ===== Sick streak indexing ===== */
+function buildSickIndexMap(inRange){
+  const sickDays=inRange.filter(s=>s.type==="sick").sort((a,b)=>new Date(a.dateStr)-new Date(b.dateStr));
+  const map={};
+  let counter=0, prev=null;
+  for(const d of sickDays){
+    if(prev){
+      const pd=new Date(prev); pd.setDate(pd.getDate()+1);
+      const isConsecutive = toLocalDateKey(pd)===d.dateStr;
+      counter = isConsecutive ? counter+1 : 1;
+    } else counter=1;
+    map[d.dateStr]=counter;
+    prev=d.dateStr;
+  }
+  return map;
+}
+
+/* ===== Calculation ===== */
+function calculatePay(){
+  const wage=parseFloat($('hourlyWage').value||0);
+  const weekNorm=parseFloat($('weeklyNorm').value||40);
+  const fromDate=new Date($('rangeFrom').value);
+  const toDate=new Date($('rangeTo').value);
+  if(wage<=0){ alert("Enter hourly wage."); return; }
+  if(!fromDate||!toDate||isNaN(fromDate)||isNaN(toDate)){ alert("Select a date range."); return; }
+
+  const inRange=sessions.filter(s=>{const d=new Date(s.dateStr); return d>=fromDate && d<=toDate;});
+  if(inRange.length===0){ alert("No sessions in the selected range."); return; }
+
+  const sickIndexByDate = buildSickIndexMap(inRange);
+  const weeks={};
+  for(const s of inRange){
+    const wk=getISOWeek(new Date(s.dateStr));
+    if(!weeks[wk]) weeks[wk]=[];
+    weeks[wk].push(s.type==="sick" ? {...s, calcSickIndex: sickIndexByDate[s.dateStr]||1} : s);
+  }
+
+  let html="";
+  const grand={ baseH:0, baseS:0, OB1h:0,OB1s:0, OB2h:0,OB2s:0, OB3h:0,OB3s:0,
+    OVAh:0,OVAs:0, OVBh:0,OVBs:0, OVCh:0,OVCs:0, OVDh:0,OVDs:0 };
+
+  for(const [wk, weekSessions] of Object.entries(weeks)){
+    html += `<h3>Week ${wk}</h3>`;
+    html += runWeekCalc(weekSessions, wage, weekNorm, grand);
+  }
+
+  html += renderTotals("Total (all weeks)", grand);
+  $('summaryOutput').innerHTML = html;
+}
+
+function getISOWeek(d){
+  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  const dayNum=dt.getUTCDay()||7;
+  dt.setUTCDate(dt.getUTCDate()+4-dayNum);
+  const yearStart=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  const weekNo=Math.ceil((((dt-yearStart)/86400000)+1)/7);
+  return dt.getUTCFullYear()+"-W"+String(weekNo).padStart(2,'0');
+}
+
+/* ===== New OT allocation (daily excess + after weekly boundary) ===== */
+function runWeekCalc(weekSessions, wage, weekNorm, grand){
+  // 1) Separate normal blocks and sick days
+  const normalBlocks=[];
+  const sickEntries=[]; // {dateStr, hours, pay, sickIndex}
+  for(const s of weekSessions){
+    if(s.type==="normal"){
+      for(const b of s.blocks) normalBlocks.push(b);
+    } else {
+      const idx=s.calcSickIndex||1;
+      const hours = (idx===1)?8 : ((idx>=2 && idx<=14)?8 : 0);
+      const pay   = (idx===1)?0 : ((idx>=2 && idx<=14)? 8*wage*0.8 : 0);
+      sickEntries.push({dateStr:s.dateStr, hours, pay, sickIndex:idx});
+    }
+  }
+  normalBlocks.sort((a,b)=>a.start-b.start);
+  sickEntries.sort((a,b)=> new Date(a.dateStr)-new Date(b.dateStr));
+
+  // 2) How many OT blocks this week (incl. sick norm hours)
+  const totalNormalBlocks = normalBlocks.length;
+  const sickNormBlocks = sickEntries.reduce((acc,e)=> acc + Math.round(e.hours/BLOCK_HOURS), 0); // 8h => 16 blocks
+  const weekNormBlocks = Math.round((weekNorm/BLOCK_HOURS)); // e.g. 40h => 80 blocks
+  let ovBlocksNeeded = Math.max(0, totalNormalBlocks + sickNormBlocks - weekNormBlocks);
+
+  // 3) Mark per block:
+  //    a) daily excess (after day norm, weekdays only)
+  //    b) whether block occurs after weekly boundary (sick hours counted at 00:00 of their date)
+  //    c) assign OT to earliest blocks meeting (a) or (b)
+  const dayMins = {}; // per date
+  const dailyNormMinCache = {};
+  function dayKey(d){ return toLocalDateKey(d); }
+
+  // Build boundary events: sick (00:00) + blocks
+  const boundaryEvents=[];
+  for(const e of sickEntries){
+    if(e.hours>0){
+      const t=new Date(e.dateStr+"T00:00:00");
+      boundaryEvents.push({time:t, kind:'sick', minutes:e.hours*60});
+    }
+  }
+  for(const b of normalBlocks){ boundaryEvents.push({time:b.start, kind:'block', block:b}); }
+  boundaryEvents.sort((x,y)=> x.time - y.time || (x.kind==='sick'?-1:1)); // sick first if same timestamp
+
+  let weekAccumMin=0;
+  const afterBoundary = new Map(); // block => bool
+  const weekNormMin = weekNorm*60;
+
+  for(const ev of boundaryEvents){
+    if(ev.kind==='sick'){
+      weekAccumMin += ev.minutes;
+    } else {
+      afterBoundary.set(ev.block, weekAccumMin >= weekNormMin);
+      weekAccumMin += BLOCK_MIN;
+    }
+  }
+
+  // Classify blocks
+  const classified = [];
+  for(const b of normalBlocks){
+    const dK = dayKey(b.start);
+    if(!(dK in dayMins)) dayMins[dK]=0;
+
+    if(!(dK in dailyNormMinCache)){
+      const dn = getDailyNorm(parseFloat($('weeklyNorm').value||40), b.start);
+      dailyNormMinCache[dK] = dn*60;
+    }
+    const dayNormMin = dailyNormMinCache[dK];
+
+    const isDailyExcess = (dayNormMin>0) && (dayMins[dK] >= dayNormMin);
+    const isAfterBoundary = !!afterBoundary.get(b);
+
+    const eligibleForOV = isDailyExcess || isAfterBoundary;
+    let isOV=false, bonus=null;
+
+    if(eligibleForOV && ovBlocksNeeded>0){
+      isOV = true;
+      bonus = ovType(b);
+      ovBlocksNeeded--;
+    } else {
+      bonus = obType(b); // may be OB3 on weekend etc., or null
+    }
+
+    classified.push({block:b, isOV, bonus});
+    dayMins[dK] += BLOCK_MIN;
+  }
+
+  // 4) Build daily aggregation (add sick days)
+  const daily={}; // dateKey -> {blocks:[], start,end, sickH,sickS,sickIndex}
+  // normal
+  for(const c of classified){
+    const k=toLocalDateKey(c.block.start);
+    if(!daily[k]) daily[k]={blocks:[], start:null, end:null, sickH:0, sickS:0, sickIndex:null};
+    daily[k].blocks.push(c);
+    const s=c.block.start, e=c.block.end;
+    if(!daily[k].start || s<daily[k].start) daily[k].start=s;
+    if(!daily[k].end || e>daily[k].end) daily[k].end=e;
+  }
+  // sick
+  for(const e of sickEntries){
+    if(!daily[e.dateStr]) daily[e.dateStr]={blocks:[], start:null, end:null, sickH:0, sickS:0, sickIndex:null};
+    daily[e.dateStr].sickH += e.hours;
+    daily[e.dateStr].sickS += e.pay;
+    daily[e.dateStr].sickIndex = e.sickIndex; // shows "Sick day X"
+  }
+
+  // 5) Render daily table
+  let html=`<table>
+    <thead><tr>
+      <th>Date</th><th>Base</th>
+      <th>OB1 (20%)</th><th>OB2 (40%)</th><th>OB3 (70%)</th>
+      <th>OVA (30%)</th><th>OVB (50%)</th><th>OVC (70%)</th><th>OVD (100%)</th>
+      <th>Day total</th></tr></thead><tbody>`;
+
+  const weekTot={ baseH:0, baseS:0, OB1h:0,OB1s:0, OB2h:0,OB2s:0, OB3h:0,OB3s:0,
+    OVAh:0,OVAs:0, OVBh:0,OVBs:0, OVCh:0,OVCs:0, OVDh:0,OVDs:0 };
+
+  for(const dateKey of Object.keys(daily).sort()){
+    const data=daily[dateKey];
+    const d=new Date(dateKey);
+
+    let baseH=data.sickH, baseS=data.sickS;
+    let OB1h=0,OB1s=0,OB2h=0,OB2s=0,OB3h=0,OB3s=0,
+        OVAh=0,OVAs=0,OVBh=0,OVBs=0,OVCh=0,OVCs=0,OVDh=0,OVDs=0;
+
+    for(const c of data.blocks){
+      baseH += BLOCK_HOURS; baseS += parseFloat($('hourlyWage').value||0)*BLOCK_HOURS;
+      if(c.isOV){
+        const t=c.bonus, r=OV_RATE[t]||0;
+        if(t==="OVA"){OVAh+=BLOCK_HOURS;OVAs+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+        if(t==="OVB"){OVBh+=BLOCK_HOURS;OVBs+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+        if(t==="OVC"){OVCh+=BLOCK_HOURS;OVCs+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+        if(t==="OVD"){OVDh+=BLOCK_HOURS;OVDs+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+      } else if(c.bonus){
+        const t=c.bonus, r=OB_RATE[t]||0;
+        if(t==="OB1"){OB1h+=BLOCK_HOURS;OB1s+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+        if(t==="OB2"){OB2h+=BLOCK_HOURS;OB2s+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+        if(t==="OB3"){OB3h+=BLOCK_HOURS;OB3s+=parseFloat($('hourlyWage').value||0)*r*BLOCK_HOURS;}
+      }
+    }
+
+    const daySEK=baseS+OB1s+OB2s+OB3s+OVAs+OVBs+OVCs+OVDs;
+    const times=data.start&&data.end?`${hhmm(data.start)}–${hhmm(data.end)}`:"—";
+    const sickTag=data.sickIndex?`<br>Sick day ${data.sickIndex}`:"";
+
+    html+=`<tr>
+      <td>${dateKey}<br>${dayNames[d.getDay()]}<br>${times}${sickTag}</td>
+      <td class="stat">${fmt2(baseH)} h<small>${fmt2(baseS)} SEK</small></td>
+      <td class="stat">${fmt2(OB1h)} h<small>${fmt2(OB1s)} SEK</small></td>
+      <td class="stat">${fmt2(OB2h)} h<small>${fmt2(OB2s)} SEK</small></td>
+      <td class="stat">${fmt2(OB3h)} h<small>${fmt2(OB3s)} SEK</small></td>
+      <td class="stat">${fmt2(OVAh)} h<small>${fmt2(OVAs)} SEK</small></td>
+      <td class="stat">${fmt2(OVBh)} h<small>${fmt2(OVBs)} SEK</small></td>
+      <td class="stat">${fmt2(OVCh)} h<small>${fmt2(OVCs)} SEK</small></td>
+      <td class="stat">${fmt2(OVDh)} h<small>${fmt2(OVDs)} SEK</small></td>
+      <td class="stat"><b>${fmt2(daySEK)}</b><small>SEK</small></td>
+    </tr>`;
+
+    // Weekly totals
+    weekTot.baseH+=baseH; weekTot.baseS+=baseS;
+    weekTot.OB1h+=OB1h; weekTot.OB1s+=OB1s;
+    weekTot.OB2h+=OB2h; weekTot.OB2s+=OB2s;
+    weekTot.OB3h+=OB3h; weekTot.OB3s+=OB3s;
+    weekTot.OVAh+=OVAh; weekTot.OVAs+=OVAs;
+    weekTot.OVBh+=OVBh; weekTot.OVBs+=OVBs;
+    weekTot.OVCh+=OVCh; weekTot.OVCs+=OVCs;
+    weekTot.OVDh+=OVDh; weekTot.OVDs+=OVDs;
+  }
+  html+="</tbody></table>";
+
+  // Weekly summary + add to grand
+  html += renderTotals("Weekly totals", weekTot);
+  for(const k in weekTot){ grand[k]=(grand[k]||0)+weekTot[k]; }
+  return html;
+}
+
+/* ===== Totals renderer: only show categories that have values ===== */
+function renderTotals(title,tot){
+  const totalSEK=tot.baseS+tot.OB1s+tot.OB2s+tot.OB3s+tot.OVAs+tot.OVBs+tot.OVCs+tot.OVDs;
+  const totalH=tot.baseH;
+  let html=`<div class="totals"><h4>${title}</h4>
+    <p><b>Total hours:</b> ${fmt2(totalH)} h</p>`;
+  html+=`<p>Base: ${fmt2(tot.baseH)} h / ${fmt2(tot.baseS)} SEK</p>`;
+  const cats=[["OB1","OB1h","OB1s"],["OB2","OB2h","OB2s"],["OB3","OB3h","OB3s"],
+              ["OVA","OVAh","OVAs"],["OVB","OVBh","OVBs"],["OVC","OVCh","OVCs"],["OVD","OVDh","OVDs"]];
+  for(const [lab,kh,ks] of cats){
+    if((tot[kh]||0)>0 || (tot[ks]||0)>0){
+      html+=`<p>${LABELS[lab]}: ${fmt2(tot[kh])} h / ${fmt2(tot[ks])} SEK</p>`;
+    }
+  }
+  html+=`<div class="grand">Total: ${fmt2(totalSEK)} SEK</div></div>`;
+  return html;
+}
+
+/* Bind */
+$('btnAdd').addEventListener('click', addSession);
+$('btnSick').addEventListener('click', addSickDay);
+$('btnReset').addEventListener('click', resetWeek);
+$('btnCalc').addEventListener('click', calculatePay);
+</script>
+</body>
+</html>
