@@ -35,100 +35,202 @@ export const Summary: React.FC<SummaryProps> = ({ result }) => {
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead className="bg-byggnads-gray-100">
                 <tr>
-                  <th className="px-4 py-3 text-left font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">Datum</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">Bas</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OB1 (20%)</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OB2 (40%)</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OB3 (70%)</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OVA (30%)</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OVB (50%)</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OVC (70%)</th>
-                  <th className="px-4 py-3 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">OVD (100%)</th>
-                  <th className="px-4 py-3 text-right font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300">Dags total</th>
+                  <th className="px-3 py-2 text-left font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300 sticky left-0 bg-byggnads-gray-100 z-10">Kategori</th>
+                  {week.days.map((day) => (
+                    <th key={day.date} className="px-2 py-2 text-center font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300 min-w-[100px]">
+                      <div className="font-semibold">{day.date.split('-').slice(1).join('-')}</div>
+                      <div className="text-xs font-normal text-byggnads-gray-600">{DAY_NAMES_SV[day.dayOfWeek]?.slice(0,3)}</div>
+                      {day.startTime && day.endTime && (
+                        <div className="text-xs font-normal text-byggnads-gray-600">{day.startTime}–{day.endTime}</div>
+                      )}
+                      {day.isSick && (
+                        <div className="text-xs font-semibold text-byggnads-orange-600">Sjuk {day.sickDay}</div>
+                      )}
+                    </th>
+                  ))}
+                  <th className="px-3 py-2 text-right font-bold text-byggnads-dark border-b-2 border-byggnads-gray-300 sticky right-0 bg-byggnads-gray-100 z-10">Total</th>
                 </tr>
               </thead>
               <tbody>
-                {week.days.map((day) => (
-                  <tr key={day.date} className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-byggnads-dark">{day.date}</div>
-                      <div className="text-xs text-byggnads-gray-600">{DAY_NAMES_SV[day.dayOfWeek] || day.dayOfWeek}</div>
-                      {day.startTime && day.endTime && (
-                        <div className="text-xs text-byggnads-gray-600">{day.startTime}–{day.endTime}</div>
-                      )}
-                      {day.isSick && (
-                        <div className="text-xs text-byggnads-orange-600 font-semibold">Sjukdag {day.sickDay}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
+                {/* Base Hours Row */}
+                <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                  <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">Bas</td>
+                  {week.days.map((day) => (
+                    <td key={day.date} className="px-2 py-2 text-center">
                       <div className="font-semibold text-byggnads-dark">{fmt(day.baseHours)} h</div>
                       <div className="text-xs text-byggnads-gray-600">{fmt(day.basePay)} kr</div>
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OB1Hours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OB1Hours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OB1Pay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OB2Hours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OB2Hours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OB2Pay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OB3Hours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OB3Hours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OB3Pay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OVAHours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OVAHours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OVAPay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OVBHours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OVBHours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OVBPay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OVCHours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OVCHours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OVCPay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {day.OVDHours > 0 && (
-                        <>
-                          <div className="font-semibold text-byggnads-dark">{fmt(day.OVDHours)} h</div>
-                          <div className="text-xs text-byggnads-gray-600">{fmt(day.OVDPay)} kr</div>
-                        </>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="font-bold text-byggnads-orange-600 text-base">{fmt(day.totalPay)}</div>
-                      <div className="text-xs text-byggnads-gray-600">kr</div>
+                  ))}
+                  <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                    <div className="text-byggnads-dark">{fmt(week.baseHours)} h</div>
+                    <div className="text-xs text-byggnads-gray-600">{fmt(week.basePay)} kr</div>
+                  </td>
+                </tr>
+
+                {/* OB1 Row - only show if there are OB1 hours */}
+                {week.OB1Hours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OB1 (20%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OB1Hours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OB1Hours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OB1Pay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OB1Hours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OB1Pay)} kr</div>
                     </td>
                   </tr>
-                ))}
+                )}
+
+                {/* OB2 Row */}
+                {week.OB2Hours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OB2 (40%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OB2Hours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OB2Hours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OB2Pay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OB2Hours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OB2Pay)} kr</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* OB3 Row */}
+                {week.OB3Hours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OB3 (70%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OB3Hours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OB3Hours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OB3Pay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OB3Hours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OB3Pay)} kr</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* OVA Row */}
+                {week.OVAHours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVA (30%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OVAHours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OVAHours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OVAPay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OVAHours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OVAPay)} kr</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* OVB Row */}
+                {week.OVBHours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVB (50%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OVBHours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OVBHours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OVBPay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OVBHours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OVBPay)} kr</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* OVC Row */}
+                {week.OVCHours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVC (70%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OVCHours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OVCHours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OVCPay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OVCHours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OVCPay)} kr</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* OVD Row */}
+                {week.OVDHours > 0 && (
+                  <tr className="border-b border-byggnads-gray-200 hover:bg-byggnads-gray-50 transition">
+                    <td className="px-3 py-2 font-semibold text-byggnads-dark sticky left-0 bg-white z-10">OVD (100%)</td>
+                    {week.days.map((day) => (
+                      <td key={day.date} className="px-2 py-2 text-center">
+                        {day.OVDHours > 0 && (
+                          <>
+                            <div className="font-semibold text-byggnads-dark">{fmt(day.OVDHours)} h</div>
+                            <div className="text-xs text-byggnads-gray-600">{fmt(day.OVDPay)} kr</div>
+                          </>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-right font-semibold sticky right-0 bg-white z-10">
+                      <div className="text-byggnads-dark">{fmt(week.OVDHours)} h</div>
+                      <div className="text-xs text-byggnads-gray-600">{fmt(week.OVDPay)} kr</div>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Total Row */}
+                <tr className="border-t-2 border-byggnads-orange-500 bg-byggnads-orange-50">
+                  <td className="px-3 py-2 font-bold text-byggnads-dark sticky left-0 bg-byggnads-orange-50 z-10">Total</td>
+                  {week.days.map((day) => (
+                    <td key={day.date} className="px-2 py-2 text-center">
+                      <div className="font-bold text-byggnads-orange-600 text-sm">{fmt(day.totalPay)}</div>
+                      <div className="text-xs text-byggnads-gray-600">kr</div>
+                    </td>
+                  ))}
+                  <td className="px-3 py-2 text-right font-bold sticky right-0 bg-byggnads-orange-50 z-10">
+                    <div className="text-byggnads-orange-600 text-base">{fmt(week.totalPay)}</div>
+                    <div className="text-xs text-byggnads-gray-600">kr</div>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
