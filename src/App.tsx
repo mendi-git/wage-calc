@@ -15,6 +15,7 @@ function App() {
   const [workWeekStart, setWorkWeekStart] = useState<DayOfWeekNumber>(1); // Monday
   const [workWeekEnd, setWorkWeekEnd] = useState<DayOfWeekNumber>(5); // Friday
   const [result, setResult] = useState<CalculationResult | null>(null);
+  const [isExplanationExpanded, setIsExplanationExpanded] = useState<boolean>(false);
   
   const handleAddWeek = (week: Week) => {
     setWeeks([...weeks, week]);
@@ -92,33 +93,15 @@ function App() {
     <div className="min-h-screen bg-byggnads-gray-50">
       {/* Header Bar */}
       <div className="bg-byggnads-blue-500 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-6 max-w-7xl flex justify-between items-start">
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold mb-2">
-              {t.title}
-            </h1>
-            <p className="text-byggnads-blue-100 text-sm md:text-base max-w-3xl">
-              {t.subtitle}
-            </p>
-          </div>
+        <div className="container mx-auto px-4 py-6 max-w-7xl flex justify-between items-center">
+          <h1 className="text-3xl md:text-4xl font-bold">
+            {t.title}
+          </h1>
           <LanguagePicker />
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Info Banner */}
-        <div className="card mb-8 border-l-4 border-byggnads-orange-500">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold text-byggnads-dark mb-2">{t.infoTitle}</h2>
-            <p className="text-byggnads-gray-600 text-sm leading-relaxed mb-2">
-              <strong>{t.infoDailyNorm}</strong> {t.infoDailyNormExample}
-            </p>
-            <p className="text-byggnads-gray-600 text-sm leading-relaxed">
-              <strong>{t.infoOvertime}</strong> {t.infoOvertimeDetails} <strong>{t.infoSickPeriod}</strong>
-            </p>
-          </div>
-        </div>
-        
         <div className="card mb-8">
           <div className="bg-byggnads-gray-50 px-6 py-4 border-b border-byggnads-gray-200">
             <h2 className="text-xl font-bold text-byggnads-dark">{t.basicSettings}</h2>
@@ -226,6 +209,47 @@ function App() {
             <Summary result={result} />
           </div>
         )}
+        
+        {/* Collapsible Explanation Section */}
+        <div className="mt-12 mb-8">
+          <button
+            onClick={() => setIsExplanationExpanded(!isExplanationExpanded)}
+            className="w-full card hover:shadow-md transition-shadow duration-200"
+          >
+            <div className="p-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-byggnads-dark flex items-center gap-2">
+                <span className="text-byggnads-blue-500">ℹ️</span>
+                {t.infoTitle}
+              </h2>
+              <svg
+                className={`w-6 h-6 text-byggnads-gray-600 transition-transform duration-200 ${
+                  isExplanationExpanded ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+          
+          {isExplanationExpanded && (
+            <div className="card mt-2 border-l-4 border-byggnads-orange-500">
+              <div className="p-6">
+                <p className="text-byggnads-gray-700 text-sm leading-relaxed mb-3">
+                  {t.subtitle}
+                </p>
+                <p className="text-byggnads-gray-600 text-sm leading-relaxed mb-2">
+                  <strong>{t.infoDailyNorm}</strong> {t.infoDailyNormExample}
+                </p>
+                <p className="text-byggnads-gray-600 text-sm leading-relaxed">
+                  <strong>{t.infoOvertime}</strong> {t.infoOvertimeDetails} <strong>{t.infoSickPeriod}</strong>
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
