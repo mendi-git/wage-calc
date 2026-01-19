@@ -145,8 +145,8 @@ export const WeekInput: React.FC<WeekInputProps> = ({
               <h3 className="text-sm font-semibold text-byggnads-gray-700 mb-3">
                 {t.defaultSchedule}
               </h3>
-              <div className="flex flex-wrap items-end gap-4">
-                <div>
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4">
+                <div className="flex-1 min-w-[140px]">
                   <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
                     {t.startTime}
                   </label>
@@ -154,11 +154,11 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                     type="time"
                     value={defaultStartTime}
                     onChange={(e) => setDefaultStartTime(e.target.value)}
-                    className="input-field"
+                    className="input-field w-full"
                   />
                 </div>
                 
-                <div>
+                <div className="flex-1 min-w-[140px]">
                   <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
                     {t.endTime}
                   </label>
@@ -166,13 +166,13 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                     type="time"
                     value={defaultEndTime}
                     onChange={(e) => setDefaultEndTime(e.target.value)}
-                    className="input-field"
+                    className="input-field w-full"
                   />
                 </div>
                 
                 <button
                   onClick={handleAddWeek}
-                  className="btn-primary"
+                  className="btn-primary w-full sm:w-auto"
                 >
                   {t.addWeek}
                 </button>
@@ -195,38 +195,40 @@ export const WeekInput: React.FC<WeekInputProps> = ({
               id={`week-${week.id}`}
               className="card"
             >
-              <div className="bg-byggnads-gray-50 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-byggnads-gray-200">
-                <div>
-                  <h3 className="text-lg font-bold text-byggnads-dark">
-                    {t.week} {week.weekNumber}, {week.year}
-                  </h3>
-                  <p className="text-sm text-byggnads-gray-600">
-                    {(() => {
-                      const dateRange = getWeekDateRange(week.year, week.weekNumber);
-                      return formatDateRange(dateRange.start, dateRange.end);
-                    })()} · {t.weekNorm}: {week.weeklyNorm}h
-                  </p>
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => toggleEditWeek(week.id)}
-                    className="px-4 py-2 bg-byggnads-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-byggnads-blue-600 transition shadow-sm"
-                  >
-                    {editingWeekId === week.id ? t.hide : t.edit}
-                  </button>
-                  <button
-                    onClick={() => onCopyWeek(week)}
-                    className="px-4 py-2 bg-byggnads-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-byggnads-gray-700 transition shadow-sm"
-                  >
-                    {t.copyToNextWeek}
-                  </button>
-                  <button
-                    onClick={() => onDeleteWeek(week.id)}
-                    className="px-4 py-2 bg-byggnads-red text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition shadow-sm"
-                  >
-                    {t.delete}
-                  </button>
+              <div className="bg-byggnads-gray-50 px-4 sm:px-6 py-4 border-b border-byggnads-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-byggnads-dark">
+                      {t.week} {week.weekNumber}, {week.year}
+                    </h3>
+                    <p className="text-sm text-byggnads-gray-600">
+                      {(() => {
+                        const dateRange = getWeekDateRange(week.year, week.weekNumber);
+                        return formatDateRange(dateRange.start, dateRange.end);
+                      })()} · {t.weekNorm}: {week.weeklyNorm}h
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => toggleEditWeek(week.id)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-byggnads-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-byggnads-blue-600 transition shadow-sm"
+                    >
+                      {editingWeekId === week.id ? t.hide : t.edit}
+                    </button>
+                    <button
+                      onClick={() => onCopyWeek(week)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-byggnads-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-byggnads-gray-700 transition shadow-sm"
+                    >
+                      {t.copyToNextWeek}
+                    </button>
+                    <button
+                      onClick={() => onDeleteWeek(week.id)}
+                      className="flex-1 sm:flex-none px-4 py-2 bg-byggnads-red text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition shadow-sm"
+                    >
+                      {t.delete}
+                    </button>
+                  </div>
                 </div>
               </div>
               
