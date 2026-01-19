@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Week, WorkDay, WeeklyNorm, DayOfWeek, DayOfWeekNumber } from '../types';
-import { getISOWeek, getDateFromWeekAndDay } from '../utils/timeUtils';
+import { Week, WorkDay, DayOfWeek, DayOfWeekNumber } from '../types';
+import { getISOWeek, getDateFromWeekAndDay, getWeekDateRange, formatDateRange } from '../utils/timeUtils';
 import { DayRow } from './DayRow';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface WeekInputProps {
   weeks: Week[];
@@ -9,6 +10,7 @@ interface WeekInputProps {
   onUpdateWeek: (week: Week) => void;
   onDeleteWeek: (weekId: string) => void;
   onCopyWeek: (week: Week) => void;
+  weeklyNorm: number;
   workWeekStart: DayOfWeekNumber;
   workWeekEnd: DayOfWeekNumber;
 }
@@ -21,12 +23,13 @@ export const WeekInput: React.FC<WeekInputProps> = ({
   onUpdateWeek,
   onDeleteWeek,
   onCopyWeek,
+  weeklyNorm,
   workWeekStart,
   workWeekEnd,
 }) => {
+  const { t } = useLanguage();
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedWeek, setSelectedWeek] = useState(getISOWeek(new Date()).week);
-  const [weeklyNorm, setWeeklyNorm] = useState<WeeklyNorm>(40);
   const [defaultStartTime, setDefaultStartTime] = useState('09:00');
   const [defaultEndTime, setDefaultEndTime] = useState('17:00');
   const [editingWeekId, setEditingWeekId] = useState<string | null>(null);
@@ -35,7 +38,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
     // Check if week already exists
     const existingWeek = weeks.find(w => w.year === selectedYear && w.weekNumber === selectedWeek);
     if (existingWeek) {
-      alert('Denna vecka finns redan!');
+      alert(t.weekExists);
       return;
     }
     
@@ -103,7 +106,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
     <div className="space-y-6">
       <div className="card">
         <div className="bg-byggnads-gray-50 px-6 py-4 border-b border-byggnads-gray-200">
-          <h2 className="text-xl font-bold text-byggnads-dark">Lägg till vecka</h2>
+          <h2 className="text-xl font-bold text-byggnads-dark">{t.addWeek}</h2>
         </div>
         <div className="p-6">
         
@@ -111,7 +114,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
             <div className="flex flex-wrap items-end gap-4">
               <div>
                 <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
-                  År
+                  {t.year}
                 </label>
                 <input
                   type="number"
@@ -125,7 +128,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
               
               <div>
                 <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
-                  Veckonummer
+                  {t.weekNumber}
                 </label>
                 <input
                   type="number"
@@ -136,32 +139,16 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                   max="53"
                 />
               </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
-                  Veckonorm (timmar)
-                </label>
-                <input
-                  type="number"
-                  value={weeklyNorm}
-                  onChange={(e) => setWeeklyNorm(parseFloat(e.target.value) || 40)}
-                  className="input-field w-24"
-                  min="0"
-                  max="168"
-                  step="0.5"
-                  placeholder="40"
-                />
-              </div>
             </div>
             
             <div className="border-t border-byggnads-gray-200 pt-4 mt-4">
               <h3 className="text-sm font-semibold text-byggnads-gray-700 mb-3">
-                Standardarbetstider (Mån-Fre)
+                {t.defaultSchedule}
               </h3>
               <div className="flex flex-wrap items-end gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
-                    Starttid
+                    {t.startTime}
                   </label>
                   <input
                     type="time"
@@ -173,7 +160,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                 
                 <div>
                   <label className="block text-sm font-semibold text-byggnads-gray-700 mb-2">
-                    Sluttid
+                    {t.endTime}
                   </label>
                   <input
                     type="time"
@@ -187,11 +174,11 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                   onClick={handleAddWeek}
                   className="btn-primary"
                 >
-                  Lägg till vecka
+                  {t.addWeek}
                 </button>
               </div>
               <p className="text-xs text-byggnads-gray-500 mt-3">
-                Dessa tider tillämpas på dagar inom din standardarbetsvecka när veckan läggs till. Övriga dagar lämnas tomma men kan redigeras efter behov.
+                {t.scheduleInfo}
               </p>
             </div>
           </div>
@@ -200,7 +187,7 @@ export const WeekInput: React.FC<WeekInputProps> = ({
       
       {weeks.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-byggnads-dark">Dina veckor</h2>
+          <h2 className="text-2xl font-bold text-byggnads-dark">{t.yourWeeks}</h2>
           
           {weeks.sort((a, b) => a.year === b.year ? a.weekNumber - b.weekNumber : a.year - b.year).map((week) => (
             <div
@@ -211,10 +198,13 @@ export const WeekInput: React.FC<WeekInputProps> = ({
               <div className="bg-byggnads-gray-50 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-byggnads-gray-200">
                 <div>
                   <h3 className="text-lg font-bold text-byggnads-dark">
-                    Vecka {week.weekNumber}, {week.year}
+                    {t.week} {week.weekNumber}, {week.year}
                   </h3>
                   <p className="text-sm text-byggnads-gray-600">
-                    Veckonorm: {week.weeklyNorm}h
+                    {(() => {
+                      const dateRange = getWeekDateRange(week.year, week.weekNumber);
+                      return formatDateRange(dateRange.start, dateRange.end);
+                    })()} · {t.weekNorm}: {week.weeklyNorm}h
                   </p>
                 </div>
                 
@@ -223,19 +213,19 @@ export const WeekInput: React.FC<WeekInputProps> = ({
                     onClick={() => toggleEditWeek(week.id)}
                     className="px-4 py-2 bg-byggnads-blue-500 text-white text-sm font-semibold rounded-lg hover:bg-byggnads-blue-600 transition shadow-sm"
                   >
-                    {editingWeekId === week.id ? 'Dölj' : 'Redigera'}
+                    {editingWeekId === week.id ? t.hide : t.edit}
                   </button>
                   <button
                     onClick={() => onCopyWeek(week)}
                     className="px-4 py-2 bg-byggnads-gray-600 text-white text-sm font-semibold rounded-lg hover:bg-byggnads-gray-700 transition shadow-sm"
                   >
-                    Kopiera till nästa vecka
+                    {t.copyToNextWeek}
                   </button>
                   <button
                     onClick={() => onDeleteWeek(week.id)}
                     className="px-4 py-2 bg-byggnads-red text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition shadow-sm"
                   >
-                    Ta bort
+                    {t.delete}
                   </button>
                 </div>
               </div>

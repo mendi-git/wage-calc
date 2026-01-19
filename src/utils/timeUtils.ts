@@ -110,3 +110,24 @@ export function getDateFromWeekAndDay(year: number, week: number, dayOfWeek: num
   weekStart.setUTCDate(weekStart.getUTCDate() + dayOfWeek - 1);
   return toLocalDateKey(weekStart);
 }
+
+export function getWeekDateRange(year: number, week: number): { start: string; end: string } {
+  const startDate = getDateFromWeekAndDay(year, week, 1); // Monday
+  const endDate = getDateFromWeekAndDay(year, week, 7); // Sunday
+  return { start: startDate, end: endDate };
+}
+
+export function formatDateRange(start: string, end: string): string {
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  
+  const startMonth = startDate.toLocaleDateString('en', { month: 'short' });
+  const startDay = startDate.getDate();
+  const endMonth = endDate.toLocaleDateString('en', { month: 'short' });
+  const endDay = endDate.getDate();
+  
+  if (startMonth === endMonth) {
+    return `${startMonth} ${startDay}–${endDay}`;
+  }
+  return `${startMonth} ${startDay} – ${endMonth} ${endDay}`;
+}

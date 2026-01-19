@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Week, CalculationResult, WorkDay, DayOfWeekNumber } from './types';
 import { WeekInput } from './components/WeekInput';
 import { Summary } from './components/Summary';
+import { LanguagePicker } from './components/LanguagePicker';
 import { calculateWages } from './utils/wageCalculator';
 import { getDateFromWeekAndDay } from './utils/timeUtils';
+import { useLanguage } from './i18n/LanguageContext';
 
 function App() {
+  const { t } = useLanguage();
   const [weeks, setWeeks] = useState<Week[]>([]);
   const [hourlyWage, setHourlyWage] = useState<number>(160);
+  const [weeklyNorm, setWeeklyNorm] = useState<number>(40);
   const [workWeekStart, setWorkWeekStart] = useState<DayOfWeekNumber>(1); // Monday
   const [workWeekEnd, setWorkWeekEnd] = useState<DayOfWeekNumber>(5); // Friday
   const [result, setResult] = useState<CalculationResult | null>(null);
@@ -35,7 +39,7 @@ function App() {
     // Check if next week already exists
     const existingWeek = weeks.find(w => w.year === nextYear && w.weekNumber === nextWeekNumber);
     if (existingWeek) {
-      alert('Nästa vecka finns redan!');
+      alert(t.nextWeekExists);
       return;
     }
     
@@ -66,12 +70,12 @@ function App() {
   
   const handleCalculate = () => {
     if (weeks.length === 0) {
-      alert('Lägg till minst en vecka!');
+      alert(t.addOneWeek);
       return;
     }
     
     if (hourlyWage <= 0) {
-      alert('Ange en giltig timlön!');
+      alert(t.enterValidWage);
       return;
     }
     
@@ -88,13 +92,16 @@ function App() {
     <div className="min-h-screen bg-byggnads-gray-50">
       {/* Header Bar */}
       <div className="bg-byggnads-blue-500 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-6 max-w-7xl">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2">
-            Löneberäkning
-          </h1>
-          <p className="text-byggnads-blue-100 text-sm md:text-base max-w-3xl">
-            Beräkna lön med övertid (OT/OV) och OB-tillägg
-          </p>
+        <div className="container mx-auto px-4 py-6 max-w-7xl flex justify-between items-start">
+          <div className="flex-1">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
+              {t.title}
+            </h1>
+            <p className="text-byggnads-blue-100 text-sm md:text-base max-w-3xl">
+              {t.subtitle}
+            </p>
+          </div>
+          <LanguagePicker />
         </div>
       </div>
 
@@ -102,25 +109,24 @@ function App() {
         {/* Info Banner */}
         <div className="card mb-8 border-l-4 border-byggnads-orange-500">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-byggnads-dark mb-2">Så fungerar beräkningen</h2>
+            <h2 className="text-lg font-semibold text-byggnads-dark mb-2">{t.infoTitle}</h2>
             <p className="text-byggnads-gray-600 text-sm leading-relaxed mb-2">
-              <strong>Dagsnorm:</strong> Veckonormen fördelas jämnt över arbetsdagarna. Ex: 28h veckonorm över mån-tors = 7h/dag.
+              <strong>{t.infoDailyNorm}</strong> {t.infoDailyNormExample}
             </p>
             <p className="text-byggnads-gray-600 text-sm leading-relaxed">
-              <strong>Övertid (OV):</strong> (1) alla timmar på dagar utanför standardarbetsveckan, (2) block som överstiger dagsnorm, eller (3) block efter veckonorm. 
-              Automatisk obetald rast efter 5 timmar. <strong>Sjukperiod:</strong> Sjukdagar som ligger inom 4 dagar från varandra räknas som en sammanhängande sjukperiod (inkl. helger). Dag 1 = 0 kr / 8h norm, Dag 2-14 = 80% lön / 8h norm, Dag 15+ = 0 kr / 0h.
+              <strong>{t.infoOvertime}</strong> {t.infoOvertimeDetails} <strong>{t.infoSickPeriod}</strong>
             </p>
           </div>
         </div>
         
         <div className="card mb-8">
           <div className="bg-byggnads-gray-50 px-6 py-4 border-b border-byggnads-gray-200">
-            <h2 className="text-xl font-bold text-byggnads-dark">Grundinställningar</h2>
+            <h2 className="text-xl font-bold text-byggnads-dark">{t.basicSettings}</h2>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex flex-wrap items-center gap-6">
               <label className="flex items-center gap-3">
-                <span className="text-byggnads-gray-700 font-medium">Timlön (SEK):</span>
+                <span className="text-byggnads-gray-700 font-medium">{t.hourlyWage}</span>
                 <input
                   type="number"
                   value={hourlyWage}
@@ -131,49 +137,63 @@ function App() {
                   placeholder="160"
                 />
               </label>
+              
+              <label className="flex items-center gap-3">
+                <span className="text-byggnads-gray-700 font-medium">{t.weeklyNormHours}</span>
+                <input
+                  type="number"
+                  value={weeklyNorm}
+                  onChange={(e) => setWeeklyNorm(parseFloat(e.target.value) || 40)}
+                  className="input-field w-24"
+                  min="0"
+                  max="168"
+                  step="0.5"
+                  placeholder="40"
+                />
+              </label>
             </div>
             
             <div className="border-t border-byggnads-gray-200 pt-4">
               <h3 className="text-sm font-semibold text-byggnads-gray-700 mb-3">
-                Standardarbetsvecka
+                {t.standardWorkWeek}
               </h3>
               <div className="flex flex-wrap items-center gap-4">
                 <label className="flex items-center gap-2">
-                  <span className="text-sm text-byggnads-gray-600 font-medium">Från:</span>
+                  <span className="text-sm text-byggnads-gray-600 font-medium">{t.from}</span>
                   <select
                     value={workWeekStart}
                     onChange={(e) => setWorkWeekStart(parseInt(e.target.value) as DayOfWeekNumber)}
                     className="input-field py-2"
                   >
-                    <option value={1}>Måndag</option>
-                    <option value={2}>Tisdag</option>
-                    <option value={3}>Onsdag</option>
-                    <option value={4}>Torsdag</option>
-                    <option value={5}>Fredag</option>
-                    <option value={6}>Lördag</option>
-                    <option value={7}>Söndag</option>
+                    <option value={1}>{t.monday}</option>
+                    <option value={2}>{t.tuesday}</option>
+                    <option value={3}>{t.wednesday}</option>
+                    <option value={4}>{t.thursday}</option>
+                    <option value={5}>{t.friday}</option>
+                    <option value={6}>{t.saturday}</option>
+                    <option value={7}>{t.sunday}</option>
                   </select>
                 </label>
                 
                 <label className="flex items-center gap-2">
-                  <span className="text-sm text-byggnads-gray-600 font-medium">Till:</span>
+                  <span className="text-sm text-byggnads-gray-600 font-medium">{t.to}</span>
                   <select
                     value={workWeekEnd}
                     onChange={(e) => setWorkWeekEnd(parseInt(e.target.value) as DayOfWeekNumber)}
                     className="input-field py-2"
                   >
-                    <option value={1}>Måndag</option>
-                    <option value={2}>Tisdag</option>
-                    <option value={3}>Onsdag</option>
-                    <option value={4}>Torsdag</option>
-                    <option value={5}>Fredag</option>
-                    <option value={6}>Lördag</option>
-                    <option value={7}>Söndag</option>
+                    <option value={1}>{t.monday}</option>
+                    <option value={2}>{t.tuesday}</option>
+                    <option value={3}>{t.wednesday}</option>
+                    <option value={4}>{t.thursday}</option>
+                    <option value={5}>{t.friday}</option>
+                    <option value={6}>{t.saturday}</option>
+                    <option value={7}>{t.sunday}</option>
                   </select>
                 </label>
               </div>
               <p className="text-xs text-byggnads-gray-500 mt-2">
-                Dagar utanför standardarbetsveckan räknas som övertid (OV). Dagsnormen beräknas genom att fördela veckonormen jämnt över arbetsdagarna.
+                {t.workWeekInfo}
               </p>
             </div>
           </div>
@@ -185,6 +205,7 @@ function App() {
           onUpdateWeek={handleUpdateWeek}
           onDeleteWeek={handleDeleteWeek}
           onCopyWeek={handleCopyWeek}
+          weeklyNorm={weeklyNorm}
           workWeekStart={workWeekStart}
           workWeekEnd={workWeekEnd}
         />
@@ -195,7 +216,7 @@ function App() {
               onClick={handleCalculate}
               className="btn-primary text-lg px-10 py-4 transform hover:scale-105"
             >
-              Beräkna lön
+              {t.calculateWages}
             </button>
           </div>
         )}
